@@ -2,3 +2,4 @@ Name: ultipoly-server
 Description: server for ultipoly
 Requires: czmq
 SourcePath: source
+Main: ultipoly-server
