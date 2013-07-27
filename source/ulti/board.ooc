@@ -5,15 +5,134 @@ import deadlogger/[Log, Logger]
 
 // sdk
 import structs/[ArrayList]
-import math
+import math/[Random], math
 
 Player: class {
 
-    index: Int
+    name: String
+    units := ArrayList<Unit> new()
 
-    init: func (=index) {
+    balance := 1500.0
+
+    init: func (=name)
+
+    toString: func -> String {
+        "player %s" format(name)
     }
 
+}
+
+// Something that roves on the board and can buy properties,
+// pay rent, etc.
+Unit: class {
+
+    board: Board
+    player: Player
+
+    // state
+    action: Action
+    tileIndex: Int
+
+    logger: Logger
+
+    init: func (=board, =player) {
+        player units add(this)
+        logger = Log getLogger("%s #%d" format(player name, player units size))
+
+        begin(Action new(ActionType WAIT))
+    }
+
+    begin: func (newAction: Action) {
+        logger info("%s => %s", player toString(),
+        action ? action toString() : "(nil)", newAction toString())
+
+        if (action) {
+            _apply(action)
+        }
+        action = newAction
+    }
+
+    _apply: func (action: Action) {
+        match (action type) {
+            case ActionType MOVE =>
+                tileIndex = action number
+                logger info("arrived on %s", board getTile(tileIndex) toString())
+        }
+    }
+
+    step: func (delta: Float) {
+        if (action) {
+            action step(delta)
+        }
+
+        if (action due?()) {
+            match (action type) {
+                case ActionType MOVE =>
+                    begin(Action new(ActionType WAIT))
+                case =>
+                    move := Action new(ActionType MOVE)
+                    roll := Dice roll()
+                    move number = board nextTile(tileIndex, roll)
+                    logger info("rolled a %d", roll)
+                    begin(move)
+            }
+        }
+    }
+}
+
+Dice: class {
+
+    roll: static func ~two -> Int {
+        roll(2, 12)
+    }
+
+    roll: static func (low, high: Int) -> Int {
+        Random randInt(low, high)
+    }
+
+}
+
+Action: class {
+    timeout := 5000.0
+
+    // an int you can store anything in
+    number := 0
+
+    type: ActionType
+
+    init: func (=type) {
+        timeout = match type {
+            case ActionType WAIT => 1500.0
+            case ActionType MOVE => 3000.0
+            case ActionType MOVE => 5000.0
+        }
+    }
+
+    step: func (delta: Float) {
+        timeout -= delta
+    }
+
+    due?: func -> Bool {
+        timeout < 0
+    }
+
+    toString: func -> String {
+        type toString()
+    }
+}
+
+ActionType: enum {
+    WAIT   // just waiting for orders
+    MOVE   // going somewhere
+    PRISON // the jailhouse won
+
+    toString: func -> String {
+        match this {
+            case This WAIT   => "wait"
+            case This MOVE   => "move"
+            case This PRISON => "prison"
+        }
+    }
 }
 
 Board: class {
@@ -23,6 +142,20 @@ Board: class {
 
     init: func {
         classicSetup()
+    }
+
+    createUnit: func (player: Player) {
+        unit := Unit new(this, player)
+        unit tileIndex = 0
+        logger info("Unit spawned on tile %s", getTile(unit tileIndex) toString())
+    }
+
+    getTile: func (index: Int) -> Tile {
+        tiles[index]
+    }
+
+    nextTile: func (base, offset: Int) -> Int {
+        (base + offset) % tiles size
     }
 
     classicSetup: func {
