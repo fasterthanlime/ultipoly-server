@@ -4,20 +4,33 @@ use deadlogger
 import deadlogger/[Log, Logger]
 
 // sdk
-import structs/[ArrayList]
+import structs/[ArrayList, Stack]
 import math/[Random], math
 
 Player: class {
 
     name: String
     units := ArrayList<Unit> new()
+    logger: Logger
 
     balance := 1500.0
 
-    init: func (=name)
+    init: func (=name) {
+        logger = Log getLogger(toString())
+    }
 
     toString: func -> String {
         "player %s" format(name)
+    }
+
+    spend: func (amount: Float) {
+        balance -= amount
+        logger warn("Spent %.0f, %.0f remaining", amount, balance)
+    }
+
+    gain: func (amount: Float) {
+        balance += amount
+        logger warn("Gained %.0f, balance = %.0f", amount, balance)
     }
 
 }
@@ -28,6 +41,7 @@ Unit: class {
 
     board: Board
     player: Player
+    messages := Stack<String> new()
 
     // state
     action: Action
@@ -39,25 +53,64 @@ Unit: class {
         player units add(this)
         logger = Log getLogger("%s #%d" format(player name, player units size))
 
-        begin(Action new(ActionType WAIT))
+        wait := Action new(ActionType WAIT)
+        wait timeout = Dice roll(100, 800)
+        begin(wait)
     }
 
     begin: func (newAction: Action) {
-        logger info("%s => %s", player toString(),
-        action ? action toString() : "(nil)", newAction toString())
-
         if (action) {
             _apply(action)
         }
+
+        while (!messages empty?()) {
+            message := messages pop()
+            match (message) {
+                case "go-to-prison" =>
+                    prisonIndex := board tileIndex(TileType PRISON)
+                    if (prisonIndex != -1) {
+                        newAction = Action new(ActionType PRISON)
+                        moveTo(prisonIndex)
+                    }
+            }
+        }
+
+        logger info("%s => %s (%.0f)",
+         action ? action toString() : "(nil)", newAction toString(), newAction timeout)
+
         action = newAction
     }
 
     _apply: func (action: Action) {
         match (action type) {
             case ActionType MOVE =>
-                tileIndex = action number
-                logger info("arrived on %s", board getTile(tileIndex) toString())
+                if (action number < tileIndex) {
+                    // fuck yeah go = $200
+                    player gain(200)
+                }
+                moveTo(action number)
         }
+    }
+
+    moveTo: func (index: Int) {
+        tileIndex = index
+        tile := board getTile(tileIndex)
+        logger info("arrived on %s", tile toString())
+
+        match (tile type) {
+            case TileType GO =>
+                player gain(200)
+            case TileType INCOME_TAX =>
+                player spend(200)
+            case TileType LUXURY_TAX =>
+                player spend(75)
+            case TileType POLICE =>
+                queue("go-to-prison")
+        }
+    }
+
+    queue: func (message: String) {
+        messages push(message)
     }
 
     step: func (delta: Float) {
@@ -93,7 +146,7 @@ Dice: class {
 }
 
 Action: class {
-    timeout := 5000.0
+    timeout: Float
 
     // an int you can store anything in
     number := 0
@@ -102,9 +155,10 @@ Action: class {
 
     init: func (=type) {
         timeout = match type {
-            case ActionType WAIT => 1500.0
-            case ActionType MOVE => 3000.0
-            case ActionType MOVE => 5000.0
+            case ActionType WAIT => 2000.0
+            case ActionType MOVE => 4000.0
+            case ActionType PRISON => 5000.0
+            case => 1000.0
         }
     }
 
@@ -135,6 +189,14 @@ ActionType: enum {
     }
 }
 
+RGB: class {
+    // 0-255
+    r, g, b: Int
+
+    init: func (=r, =g, =b) {
+    }
+}
+
 Board: class {
 
     tiles := ArrayList<Tile> new()    
@@ -158,18 +220,30 @@ Board: class {
         (base + offset) % tiles size
     }
 
+    tileIndex: func (tileType: TileType) -> Int {
+        i := 0
+        for (tile in tiles) {
+            if (tile type == tileType) {
+                return i
+            }
+            i += 1
+        }
+
+         -1
+    }
+
     classicSetup: func {
         // for now, hardcode the structure...
         i := 0
 
-        brown  := StreetGroup new("brown")
-        cyan   := StreetGroup new("cyan")
-        pink   := StreetGroup new("pink")
-        orange := StreetGroup new("orange")
-        red    := StreetGroup new("red")
-        yellow := StreetGroup new("yellow")
-        green  := StreetGroup new("green")
-        blue   := StreetGroup new("blue")
+        brown  := StreetGroup new("brown", RGB new(153, 102, 51))
+        cyan   := StreetGroup new("cyan", RGB new(0, 255, 255))
+        pink   := StreetGroup new("pink", RGB new(255, 128, 128))
+        orange := StreetGroup new("orange", RGB new(255, 128, 0))
+        red    := StreetGroup new("red", RGB new(255, 0, 0))
+        yellow := StreetGroup new("yellow", RGB new(255, 255, 0))
+        green  := StreetGroup new("green", RGB new(0, 255, 0))
+        blue   := StreetGroup new("blue", RGB new(0, 0, 255))
 
         add(SpecialTile new(TileType GO))
         add(Street new(i += 1, brown))
@@ -233,9 +307,10 @@ Board: class {
 
 Tile: abstract class {
 
+    type: TileType
     owner: Player = null
 
-    init: func
+    init: func (=type)
 
     toString: func -> String {
         "%s:%p" format(class name, this)
@@ -247,9 +322,9 @@ Tile: abstract class {
 
 SpecialTile: class extends Tile {
 
-    type: TileType
-
-    init: func (=type)
+    init: func (.type) {
+        super(type)
+    }
 
     rent: func -> Float {
         match type {
@@ -269,6 +344,7 @@ SpecialTile: class extends Tile {
 }
 
 TileType: enum {
+    STREET     // street tile!
     GO         // collect $200
     CHANCE     // chance card
     COMMUNITY  // community card
@@ -299,8 +375,9 @@ TileType: enum {
 StreetGroup: class {
     name: String
     streets := ArrayList<Street> new()
+    rgb: RGB
 
-    init: func (=name)
+    init: func (=name, =rgb)
 
     add: func (street: Street) {
         streets add(street)
@@ -321,6 +398,8 @@ Street: class extends Tile {
     houseCount := 0
 
     init: func (=index, =group) {
+        super(TileType STREET)
+
         baseRent = 2 + index * 2.25
         price = 50 + index * 16.67
         housePrice = 50 + index * 7.15

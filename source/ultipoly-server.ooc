@@ -33,7 +33,7 @@ Server: class extends Base {
 
         while (true) {
             for (game in games) {
-                game step(delta)
+                game step(delta * 4)
             }
 
             Time sleepMilli(delta)
@@ -48,12 +48,22 @@ Game: class {
     players := ArrayList<Player> new()
 
     init: func {
-        board := Board new()
+        board = Board new()
         board print()
 
-        player := Player new("zapa")
-        board createUnit(player)
+        addPlayer("zapa")
+        addPlayer("hulu")
+        addPlayer("kool")
+        addPlayer("gang")
+    }
+
+    addPlayer: func (name: String) {
+        player := Player new(name)
         players add(player)
+
+        for (i in 0..3) {
+            board createUnit(player)
+        }
     }
 
     step: func (delta: Float) {
