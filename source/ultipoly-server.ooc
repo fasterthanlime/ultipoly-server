@@ -20,6 +20,7 @@ Server: class extends Base {
         logger info("Starting up ultipoly-server...")
 
         board := Board new()
+        board print()
     }
 
 }

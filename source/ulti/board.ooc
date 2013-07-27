@@ -29,14 +29,14 @@ Board: class {
         // for now, hardcode the structure...
         i := 0
 
-        brown  := StreetGroup new()
-        cyan   := StreetGroup new()
-        pink   := StreetGroup new()
-        orange := StreetGroup new()
-        red    := StreetGroup new()
-        yellow := StreetGroup new()
-        green  := StreetGroup new()
-        blue   := StreetGroup new()
+        brown  := StreetGroup new("brown")
+        cyan   := StreetGroup new("cyan")
+        pink   := StreetGroup new("pink")
+        orange := StreetGroup new("orange")
+        red    := StreetGroup new("red")
+        yellow := StreetGroup new("yellow")
+        green  := StreetGroup new("green")
+        blue   := StreetGroup new("blue")
 
         add(SpecialTile new(TileType GO))
         add(Street new(i += 1, brown))
@@ -86,6 +86,14 @@ Board: class {
     }
 
     add: func (tile: Tile) {
+        tiles add(tile)
+    }
+
+    print: func {
+        logger warn("Tiles")
+        for (tile in tiles) {
+            logger info(tile toString())
+        }
     }
 
 }
@@ -121,6 +129,10 @@ SpecialTile: class extends Tile {
         }
     }
 
+    toString: func -> String {
+        "%s tile" format(type toString())
+    }
+
 }
 
 TileType: enum {
@@ -134,12 +146,28 @@ TileType: enum {
     LUXURY_TAX // $75
     INCOME_TAX // 10% or $200 
     PARK       // nothing!
+
+    toString: func -> String {
+        match this {
+            case This GO => "go"
+            case This CHANCE => "chance"
+            case This COMMUNITY => "community"
+            case This PRISON => "prison"
+            case This POLICE => "police"
+            case This TRAIN => "train"
+            case This ENERGY => "energy"
+            case This LUXURY_TAX => "luxury tax"
+            case This INCOME_TAX => "income tax"
+            case This PARK => "park"
+        }
+    }
 }
 
 StreetGroup: class {
+    name: String
     streets := ArrayList<Street> new()
 
-    init: func
+    init: func (=name)
 
     add: func (street: Street) {
         streets add(street)
@@ -149,7 +177,6 @@ StreetGroup: class {
 Street: class extends Tile {
     index: Float
 
-    name: String
     baseRent: Float
     price: Float
     housePrice: Float
@@ -183,6 +210,11 @@ Street: class extends Tile {
 
     powerRent: func (a, b: Float) -> Float {
         a + b * pow((-1 + (index as Float / 21.0 * 0.3)), 8)
+    }
+
+    toString: func -> String {
+        "%s street, base = %.0f, price = %.0f, house = %.0f, mort %.0f" \
+        format(group name, baseRent, price, housePrice, mortgage)
     }
 
 }
