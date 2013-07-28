@@ -53,6 +53,7 @@ ServerNet: class {
     }
 
     reply: func (str: String) {
+        logger warn("Replying with: %s", str)
         rep sendString(str)
     }
 

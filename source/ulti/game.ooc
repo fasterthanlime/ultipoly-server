@@ -36,6 +36,7 @@ Game: class {
         for (i in 0..1) {
             board createUnit(player)
         }
+        logger info("Player %s joined", name)
     }
 
     step: func (delta: Float) {
@@ -45,6 +46,7 @@ Game: class {
             case GameState ACCEPTING_PLAYERS =>
                 if (players size > 1) {
                     state = GameState RUNNING
+                    logger info("Game started!")
                 }
             case GameState RUNNING =>
                 stepPlayers(delta)
