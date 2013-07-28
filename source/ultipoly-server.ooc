@@ -4,7 +4,7 @@ use deadlogger
 import deadlogger/[Log, Logger]
 
 // ours
-import ulti/[base, board]
+import ulti/[base, net, game]
 
 // sdk
 import structs/[ArrayList]
@@ -42,50 +42,4 @@ Server: class extends Base {
 
 }
 
-Game: class {
-
-    board: Board
-    players := ArrayList<Player> new()
-
-    state := GameState ACCEPTING_PLAYERS
-
-    init: func {
-        board = Board new()
-        board print()
-    }
-
-    addPlayer: func (name: String) {
-        player := Player new(name)
-        players add(player)
-
-        for (i in 0..1) {
-            board createUnit(player)
-        }
-    }
-
-    step: func (delta: Float) {
-        match state {
-            case GameState ACCEPTING_PLAYERS =>
-                if (players size > 1) {
-                    state = GameState RUNNING
-                }
-            case GameState RUNNING =>
-                stepPlayers(delta)
-        }
-    }
-
-    stepPlayers: func (delta: Float) {
-        for (player in players) {
-            for (unit in player units) {
-                unit step(delta)
-            }
-        }
-    }
-
-}
-
-GameState: enum {
-    ACCEPTING_PLAYERS
-    RUNNING
-}
 

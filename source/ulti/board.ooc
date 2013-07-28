@@ -203,13 +203,13 @@ Board: class {
     logger := static Log getLogger(This name)
 
     init: func {
-        classicSetup()
     }
 
-    createUnit: func (player: Player) {
+    createUnit: func (player: Player) -> Unit {
         unit := Unit new(this, player)
         unit tileIndex = 0
         logger info("Unit spawned on tile %s", getTile(unit tileIndex) toString())
+        unit
     }
 
     getTile: func (index: Int) -> Tile {
@@ -361,10 +361,10 @@ TileType: enum {
             case This GO => "go"
             case This CHANCE => "chance"
             case This COMMUNITY => "community"
-            case This PRISON => "prison"
-            case This POLICE => "police"
-            case This TRAIN => "train"
-            case This ENERGY => "energy"
+            case This PRISON => "detention"
+            case This POLICE => "militia"
+            case This TRAIN => "moonrail"
+            case This ENERGY => "solar"
             case This LUXURY_TAX => "luxury tax"
             case This INCOME_TAX => "income tax"
             case This PARK => "park"
