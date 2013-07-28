@@ -21,6 +21,7 @@ ServerNet: class {
     context: Context
     rep: Socket
     pub: Socket
+    pubPort: Int
 
     logger := static Log getLogger(This name)
 
@@ -32,7 +33,9 @@ ServerNet: class {
         rep bind(address)
         logger warn("Reply socket bound on %s", address)
 
-        //pub = context createSocket(ZMQ PUB)
+        pub = context createSocket(ZMQ PUB)
+        pubPort = pub bind("tcp://0.0.0.0:*")
+        logger warn("Publish socket bound on port %d", pubPort)
     }
 
     update: func {
@@ -41,35 +44,70 @@ ServerNet: class {
 
     pumpRep: func {
         while (rep poll(10)) {
-            str := rep recvString()
-            logger warn("Received message: %s", str)
+            str := rep recvStringNoWait()
+            if (str == null) return
 
-            tokens := str split('\n')
-            if (tokens empty?()) {
-                reply(ZBag make("error", "malformed message"))
-            }
+            bag := ZBag extract(str)
 
-            match (tokens[0]) {
+            message := bag pull()
+            logger warn("<< %s", message)
+
+            match (message) {
                 case "join" =>
-                    onJoin(tokens)
+                    onJoin(bag)
+                case "ready" =>
+                    onReady(bag)
+                case =>
+                    logger warn("unknown message!")
+                    reply(ZBag make("error", "unknown message: %s" format(message)))
             }
         }
     }
 
+    // util
+
     reply: func (bag: ZBag) {
-        logger warn("Replying a: %s", bag first())
+        logger warn(">> %s", bag first())
         rep sendString(bag pack())
     }
 
-    onJoin: func (tokens: List<String>) {
-        name := tokens[1]
+    publish: func (bag: ZBag) {
+        logger warn(">* %s", bag first())
+        pub sendString(bag pack())
+    }
+
+    // events
+
+    onJoin: func (bag: ZBag) {
+        name := bag pull()
         logger warn("%s is trying to join", name)
         game addPlayer(name)
+        welcome()
+    }
 
+    onReady: func (bag: ZBag) {
+        name := bag pull()
+        logger warn("%s is ready", name)
+        game getPlayer(name) ready()
+        reply(ZBag make("ack"))
+    }
+
+    // business
+
+    welcome: func {
         bag := ZBag new()
-        bag shove("joined")
-        game board shove(bag)
+        bag shove("welcome")
+        bag shove("port")
+        bag shoveInt(pubPort)
         reply(bag)
+    }
+
+    broadcastGameInfo: func {
+        bag := ZBag new()
+        bag shove("game info")
+        bag shove("board")
+        game board shove(bag)
+        publish(bag)
     }
 
 }

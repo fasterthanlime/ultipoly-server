@@ -20,6 +20,12 @@ ClientNet: class {
 
     context: Context
     req: Socket
+    sub: Socket
+
+    hostname: String
+    reqPort, subPort: Int
+
+    name: String
 
     logger := static Log getLogger(This name)
 
@@ -27,6 +33,8 @@ ClientNet: class {
         // create zmq context
         context = Context new()
         req = context createSocket(ZMQ REQ)
+
+        sub = context createSocket(ZMQ SUB)
     }
 
     // loop
@@ -38,15 +46,19 @@ ClientNet: class {
 
     pumpReq: func {
         while (req poll(10)) {
-            str := req recvString()
+            str := req recvStringNoWait()
+            if (str == null) return
+
             bag := ZBag extract(str)
     
             message := bag pull()
-            logger warn("Received from server: %s", message)
+            logger warn("<< %s", message)
 
             match message {
-                case "joined" =>
-                    onBoard(Board pull(bag))
+                case "welcome" =>
+                    onWelcome(bag)
+                case "ack" =>
+                    // all good!
                 case =>
                     logger warn("Unknown message :'(")
             }
@@ -54,30 +66,72 @@ ClientNet: class {
     }
 
     pumpSub: func {
-        // not yet.
+        while (sub poll(10)) {
+            str := sub recvStringNoWait()
+            if (str == null) return
+
+            bag := ZBag extract(str)
+
+            message := bag pull()
+            logger warn("<* %s", message)
+
+            match message {
+                case "game info" =>
+                    onGameInfo(bag)
+                case =>
+                    logger warn("Unknown message :'(")
+            }
+        }
     }
 
-    // business
 
-    join: func (name: String) {
-        send("join\n%s" format(name))
+    onWelcome: func (bag: ZBag) {
+        bag pullCheck("port")
+        connectSub(bag pullInt())
+        ready()
     }
 
-    // utility
-
-    connect: func (address: String) {
-        logger warn("Connecting to: %s", address)
-        req connect(address)
-    }
-
-    send: func (str: String) {
-        logger warn("Sending: %s", str)
-        req sendString(str)
+    onGameInfo: func (bag: ZBag) {
+        bag pullCheck("board")
+        board := Board pull(bag)
+        onBoard(board)
     }
 
     // override that shiznit
 
     onBoard: func (board: Board)
+
+    // business
+
+    join: func (=name) {
+        send(ZBag make("join", name))
+    }
+
+    ready: func {
+        send(ZBag make("ready", name))
+    }
+
+    // utility
+
+    connect: func (=hostname, =reqPort) {
+        address := "tcp://%s:%d" format(hostname, reqPort)
+        logger warn("Connecting req/rep to: %s", address)
+        req connect(address)
+    }
+
+    connectSub: func (=subPort) {
+        address := "tcp://%s:%d" format(hostname, subPort)
+        logger warn("Connecting pub/sub to: %s", address)
+        sub connect(address)
+
+        // subscribe to ALLLL the messages.
+        sub subscribe("")
+    }
+
+    send: func (bag: ZBag) {
+        logger warn(">> %s", bag first())
+        req sendString(bag pack())
+    }
 
 }
 
