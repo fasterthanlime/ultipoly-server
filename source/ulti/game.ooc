@@ -4,7 +4,7 @@ use deadlogger
 import deadlogger/[Log, Logger]
 
 // ours
-import ulti/[base, board, net]
+import ulti/[base, board, servernet]
 
 // sdk
 import structs/[ArrayList]

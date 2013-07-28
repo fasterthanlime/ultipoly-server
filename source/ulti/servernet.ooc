@@ -8,7 +8,7 @@ import deadlogger/[Log, Logger]
 
 // ours
 use ultipoly-server
-import ulti/[board, game]
+import ulti/[board, game, zbag]
 
 // sdk
 import text/StringTokenizer
@@ -36,13 +36,17 @@ ServerNet: class {
     }
 
     update: func {
+        pumpRep()
+    }
+
+    pumpRep: func {
         while (rep poll(10)) {
             str := rep recvString()
             logger warn("Received message: %s", str)
 
             tokens := str split('\n')
             if (tokens empty?()) {
-                reply("error\nmalformed message")
+                reply(ZBag make("error", "malformed message"))
             }
 
             match (tokens[0]) {
@@ -52,61 +56,20 @@ ServerNet: class {
         }
     }
 
-    reply: func (str: String) {
-        logger warn("Replying with: %s", str)
-        rep sendString(str)
+    reply: func (bag: ZBag) {
+        logger warn("Replying a: %s", bag first())
+        rep sendString(bag pack())
     }
 
     onJoin: func (tokens: List<String>) {
         name := tokens[1]
         logger warn("%s is trying to join", name)
         game addPlayer(name)
-        reply("joined")
+
+        bag := ZBag new()
+        bag shove("joined")
+        game board shove(bag)
+        reply(bag)
     }
 
 }
-
-ClientNet: class {
-
-    player: Player
-
-    context: Context
-    req: Socket
-
-    logger := static Log getLogger(This name)
-
-    init: func {
-        // create zmq context
-        context = Context new()
-        req = context createSocket(ZMQ REQ)
-    }
-
-    // loop
-
-    update: func {
-        while (req poll(10)) {
-            str := req recvString()
-            logger warn("Received message from server: %s", str)
-        }
-    }
-
-    // business
-
-    join: func (name: String) {
-        send("join\n%s" format(name))
-    }
-
-    // utility
-
-    connect: func (address: String) {
-        logger warn("Connecting to: %s", address)
-        req connect(address)
-    }
-
-    send: func (str: String) {
-        logger warn("Sending: %s", str)
-        req sendString(str)
-    }
-
-}
-

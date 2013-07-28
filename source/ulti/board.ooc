@@ -4,8 +4,11 @@ use deadlogger
 import deadlogger/[Log, Logger]
 
 // sdk
-import structs/[ArrayList, Stack]
+import structs/[ArrayList, Stack, HashMap]
 import math/[Random], math
+
+// ours
+import ulti/[zbag]
 
 Player: class {
 
@@ -200,6 +203,7 @@ RGB: class {
 Board: class {
 
     tiles := ArrayList<Tile> new()    
+    streetGroups := HashMap<String, StreetGroup> new()    
     logger := static Log getLogger(This name)
 
     init: func {
@@ -236,14 +240,14 @@ Board: class {
         // for now, hardcode the structure...
         i := 0
 
-        brown  := StreetGroup new("brown", RGB new(153, 102, 51))
-        cyan   := StreetGroup new("cyan", RGB new(0, 255, 255))
-        pink   := StreetGroup new("pink", RGB new(255, 128, 128))
-        orange := StreetGroup new("orange", RGB new(255, 128, 0))
-        red    := StreetGroup new("red", RGB new(255, 0, 0))
-        yellow := StreetGroup new("yellow", RGB new(255, 255, 0))
-        green  := StreetGroup new("green", RGB new(0, 255, 0))
-        blue   := StreetGroup new("blue", RGB new(0, 0, 255))
+        brown  := addGroup(StreetGroup new("brown", RGB new(153, 102, 51)))
+        cyan   := addGroup(StreetGroup new("cyan", RGB new(0, 255, 255)))
+        pink   := addGroup(StreetGroup new("pink", RGB new(255, 128, 128)))
+        orange := addGroup(StreetGroup new("orange", RGB new(255, 128, 0)))
+        red    := addGroup(StreetGroup new("red", RGB new(255, 0, 0)))
+        yellow := addGroup(StreetGroup new("yellow", RGB new(255, 255, 0)))
+        green  := addGroup(StreetGroup new("green", RGB new(0, 255, 0)))
+        blue   := addGroup(StreetGroup new("blue", RGB new(0, 0, 255)))
 
         add(SpecialTile new(TileType GO))
         add(Street new(i += 1, brown))
@@ -292,15 +296,70 @@ Board: class {
         logger info("Added %d streets", i)
     }
 
+    addGroup: func (group: StreetGroup) -> StreetGroup {
+        streetGroups put(group name, group)
+        group
+    }
+
+    getGroup: func (name: String) -> StreetGroup {
+        streetGroups get(name)
+    }
+
     add: func (tile: Tile) {
         tiles add(tile)
     }
 
     print: func {
-        logger warn("Tiles")
+        logger warn("Board tiles:")
         for (tile in tiles) {
             logger info(tile toString())
         }
+    }
+
+    shove: func (bag: ZBag) {
+        bag shove("board")
+
+        bag shove("groups")
+        bag shoveInt(streetGroups size)
+
+        for (group in streetGroups) {
+            group shove(bag)
+        }
+        bag shove("groups end")
+
+        bag shove("tiles")
+        bag shoveInt(tiles size)
+
+        for (tile in tiles) {
+            tile shove(bag)
+        }
+        bag shove("tiles end")
+
+        bag shove("board end")
+    }
+
+    pull: static func (bag: ZBag) -> This {
+        bag pullCheck("board")
+        board := This new()
+
+        bag pullCheck("groups")
+        numGroups := bag pullInt()
+
+        for (i in 0..numGroups) {
+            board addGroup(StreetGroup pull(bag))
+        }
+        bag pullCheck("groups end")
+
+        bag pullCheck("tiles")
+        numTiles := bag pullInt()
+
+        for (i in 0..numTiles) {
+            board add(Tile pull(bag, board))
+        }
+        bag pullCheck("tiles end")
+        bag pullCheck("board end")
+
+        board
     }
 
 }
@@ -317,6 +376,37 @@ Tile: abstract class {
     }
 
     rent: abstract func -> Float
+
+    shove: func (bag: ZBag) {
+        bag shove("tile start")
+        bag shoveInt(type as Int)
+        match this {
+            case street: Street =>
+                bag shoveInt(street index)
+                bag shove(street group name)
+        }
+        bag shove("tile end")
+    }
+
+    pull: static func (bag: ZBag, board: Board) -> This {
+        bag pullCheck("tile start")
+        type := bag pullInt() as TileType
+
+        tile: This = match type {
+            case TileType STREET =>
+                index := bag pullInt()
+                groupName := bag pull()
+                group := board getGroup(groupName)
+                if (!group) {
+                    ZBag complain("Can't find group '%s'" format(groupName))
+                }
+                Street new(index, group)
+            case =>
+                SpecialTile new(type)
+        }
+        bag pullCheck("tile end")
+        tile
+    }
 
 }
 
@@ -381,6 +471,26 @@ StreetGroup: class {
 
     add: func (street: Street) {
         streets add(street)
+    }
+
+    shove: func (bag: ZBag) {
+        bag shove("streetgroup")
+        bag shove(name)
+        bag shoveInt(rgb r)
+        bag shoveInt(rgb g)
+        bag shoveInt(rgb b)
+        bag shove("streetgroup end")
+    }
+
+    pull: static func (bag: ZBag) -> This {
+        bag pullCheck("streetgroup")
+        name := bag pull()
+        r := bag pullInt()
+        g := bag pullInt()
+        b := bag pullInt()
+        bag pullCheck("streetgroup end")
+
+        This new(name, RGB new(r, g, b))
     }
 }
 
