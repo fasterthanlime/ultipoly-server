@@ -338,7 +338,7 @@ SpecialTile: class extends Tile {
     }
 
     toString: func -> String {
-        "%s tile" format(type toString())
+        "%s" format(type toString())
     }
 
 }
