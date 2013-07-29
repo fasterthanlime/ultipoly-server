@@ -126,6 +126,10 @@ ServerNet: class {
             bag shove(unit hash)
         }
         publish(bag)
+
+        bag = ZBag new()
+        bag shove("start")
+        publish(bag)
     }
 
 }
