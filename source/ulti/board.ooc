@@ -14,9 +14,11 @@ Player: class {
 
     name: String
     units := ArrayList<Unit> new()
-    logger: Logger
 
     balance := 1500.0
+
+    logger: Logger
+    hose := Firehose new()
 
     init: func (=name) {
         logger = Log getLogger(toString())
@@ -29,11 +31,28 @@ Player: class {
     spend: func (amount: Float) {
         balance -= amount
         logger warn("Spent %.0f, %.0f remaining", amount, balance)
+        balanceOp(-amount)
     }
 
     gain: func (amount: Float) {
         balance += amount
         logger warn("Gained %.0f, balance = %.0f", amount, balance)
+        balanceOp(amount)
+    }
+
+    // broadcast balance
+    balanceOp: func (diff: Float) {
+        hose publish(ZBag make("balance", diff, balance))
+    }
+
+    applyEvent: func (bag: ZBag) {
+        message := bag pull()
+        match message {
+            case "balance" =>
+                // do something with diff? visual feedback? hell yeah.
+                diff := bag pullFloat()
+                balance = bag pullFloat()
+        }
     }
 
 }

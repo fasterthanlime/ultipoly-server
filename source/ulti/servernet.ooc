@@ -100,6 +100,12 @@ ServerNet: class {
         publish(bag)
     }
 
+    playerEvent: func (player: Player, bag: ZBag) {
+        bag preshove(player name)
+        bag preshove("player event")
+        publish(bag)
+    }
+
     welcome: func {
         bag := ZBag new()
         bag shove("welcome")

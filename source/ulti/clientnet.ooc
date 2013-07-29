@@ -84,6 +84,8 @@ ClientNet: class {
                     start()
                 case "unit event" =>
                     unitEvent(bag)
+                case "player event" =>
+                    playerEvent(bag)
                 case =>
                     logger warn("Unknown message :'(")
             }
@@ -116,6 +118,8 @@ ClientNet: class {
     }
 
     unitEvent: func (bag: ZBag)
+
+    playerEvent: func (bag: ZBag)
 
     // override that shiznit
 

@@ -35,6 +35,10 @@ ServerGame: class {
     addPlayer: func (name: String) {
         player := Player new(name)
         players put(player name, ServerPlayer new(player))
+        player hose subscribe(|bag|
+            logger info("Player event: %s", bag first())
+            net playerEvent(player, bag)
+        )
 
         for (i in 0..1) {
             unit := board createUnit(player)
