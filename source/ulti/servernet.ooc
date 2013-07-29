@@ -94,6 +94,12 @@ ServerNet: class {
 
     // business
 
+    unitEvent: func (unit: Unit, bag: ZBag) {
+        bag preshove(unit hash)
+        bag preshove("unit event")
+        publish(bag)
+    }
+
     welcome: func {
         bag := ZBag new()
         bag shove("welcome")

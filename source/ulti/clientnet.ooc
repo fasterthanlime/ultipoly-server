@@ -82,6 +82,8 @@ ClientNet: class {
                     newUnit(bag)
                 case "start" =>
                     start()
+                case "unit event" =>
+                    unitEvent(bag)
                 case =>
                     logger warn("Unknown message :'(")
             }
@@ -112,6 +114,8 @@ ClientNet: class {
             onNewUnit(playerName, hash)
         }
     }
+
+    unitEvent: func (bag: ZBag)
 
     // override that shiznit
 

@@ -37,7 +37,12 @@ ServerGame: class {
         players put(player name, ServerPlayer new(player))
 
         for (i in 0..1) {
-            board createUnit(player)
+            unit := board createUnit(player)
+            unit initialWait()
+            unit hose subscribe(|bag|
+                logger info("Unit event: %s", bag first())
+                net unitEvent(unit, bag)
+            )
         }
         logger info("Player %s joined", name)
     }

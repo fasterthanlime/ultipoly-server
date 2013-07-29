@@ -20,7 +20,7 @@ ZBag: class {
         readonly = true
     }
 
-    shove: func (str: String) {
+    _check: func (str: String) {
         if (readonly) {
             complain("Trying to shove stuff in a readonly zbag.")
         }
@@ -28,6 +28,15 @@ ZBag: class {
         if (str contains?('\n')) {
             complain("Trying to shove a newline in a zbag. Escape your shit, yo.")
         }
+    }
+
+    preshove: func (str: String) {
+        _check(str)
+        stuff add(0, str)
+    }
+
+    shove: func (str: String) {
+        _check(str)
         stuff add(str)
     }
 

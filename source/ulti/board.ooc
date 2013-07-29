@@ -8,7 +8,7 @@ import structs/[ArrayList, Stack, HashMap]
 import math/[Random], math
 
 // ours
-import ulti/[zbag]
+import ulti/[zbag, events]
 
 Player: class {
 
@@ -54,10 +54,14 @@ Unit: class {
 
     logger: Logger
 
+    hose := Firehose new()
+
     init: func (=board, =player) {
         player units add(this)
         logger = Log getLogger("%s #%d" format(player name, player units size))
+    }
 
+    initialWait: func {
         wait := Action new(ActionType WAIT)
         wait timeout = Dice roll(100, 800)
         begin(wait)
@@ -111,6 +115,19 @@ Unit: class {
                 player spend(75)
             case TileType POLICE =>
                 queue("go-to-prison")
+        }
+
+        hose publish(ZBag make("move", tileIndex))
+    }
+
+    applyEvent: func (bag: ZBag) {
+        message := bag pull()
+        match message {
+            case "move" =>
+                tileIndex = bag pullInt()
+                logger info("Unit %s moved to %d", hash, tileIndex)
+            case =>
+                logger warn("Unknown unit event message: %s", message)
         }
     }
 
