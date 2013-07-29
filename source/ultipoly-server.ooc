@@ -16,13 +16,13 @@ main: func (args: ArrayList<String>) {
 
 Server: class extends Base {
 
-    games := ArrayList<Game> new()
+    games := ArrayList<ServerGame> new()
 
     init: func {
         super()
         logger info("Starting up ultipoly-server...")
 
-        game := Game new()
+        game := ServerGame new()
         games add(game)
 
         run()

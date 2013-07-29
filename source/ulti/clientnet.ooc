@@ -92,14 +92,20 @@ ClientNet: class {
     }
 
     onGameInfo: func (bag: ZBag) {
-        bag pullCheck("board")
         board := Board pull(bag)
         onBoard(board)
+
+        numPlayers := bag pullInt()
+        for (i in 0..numPlayers) {
+            onNewPlayer(bag pull())
+        }
     }
 
     // override that shiznit
 
     onBoard: func (board: Board)
+
+    onNewPlayer: func (name: String)
 
     // business
 

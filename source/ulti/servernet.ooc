@@ -16,7 +16,7 @@ import structs/[List, ArrayList]
 
 ServerNet: class {
 
-    game: Game
+    game: ServerGame
 
     context: Context
     rep: Socket
@@ -105,8 +105,11 @@ ServerNet: class {
     broadcastGameInfo: func {
         bag := ZBag new()
         bag shove("game info")
-        bag shove("board")
         game board shove(bag)
+        bag shoveInt(game players size)
+        for (player in game players) {
+            bag shove(player player name)
+        }
         publish(bag)
     }
 

@@ -10,12 +10,12 @@ import ulti/[base, board, servernet]
 import structs/[ArrayList, HashMap]
 import os/[Time]
 
-Game: class {
+ServerGame: class {
 
     board: Board
     players := HashMap<String, ServerPlayer> new()
 
-    state := GameState ACCEPTING_PLAYERS
+    state := ServerGameState ACCEPTING_PLAYERS
     net: ServerNet
 
     logger := static Log getLogger(This name)
@@ -47,26 +47,24 @@ Game: class {
         net update()
 
         match state {
-            case GameState ACCEPTING_PLAYERS =>
+            case ServerGameState ACCEPTING_PLAYERS =>
                 if (readyToStart?()) {
-                    state = GameState RUNNING
+                    state = ServerGameState RUNNING
                     logger info("Game started!")
                     net broadcastGameInfo()
                 }
-            case GameState RUNNING =>
+            case ServerGameState RUNNING =>
                 stepPlayers(delta)
         }
     }
 
     readyToStart?: func -> Bool {
         if (players size < 2) {
-            logger warn("Not enough players")
             return false
         }
 
         for (p in players) {
             if (!p ready?()) {
-                logger warn("Player %s is not ready", p player name)
                 return false
             }
         }
@@ -84,7 +82,7 @@ Game: class {
 
 }
 
-GameState: enum {
+ServerGameState: enum {
     ACCEPTING_PLAYERS
     RUNNING
 }
