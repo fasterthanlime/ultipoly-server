@@ -20,6 +20,9 @@ ServerGame: class {
 
     logger := static Log getLogger(This name)
 
+    // params
+    MINIMUM_PLAYERS := 1
+
     init: func {
         net = ServerNet new(this, "tcp://0.0.0.0:5555")
         logger info("Socket open.")
@@ -59,7 +62,7 @@ ServerGame: class {
     }
 
     readyToStart?: func -> Bool {
-        if (players size < 2) {
+        if (players size < MINIMUM_PLAYERS) {
             return false
         }
 
