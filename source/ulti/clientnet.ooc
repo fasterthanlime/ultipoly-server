@@ -77,13 +77,16 @@ ClientNet: class {
 
             match message {
                 case "game info" =>
-                    onGameInfo(bag)
+                    gameInfo(bag)
+                case "new unit" =>
+                    newUnit(bag)
+                case "start" =>
+                    start()
                 case =>
                     logger warn("Unknown message :'(")
             }
         }
     }
-
 
     onWelcome: func (bag: ZBag) {
         bag pullCheck("port")
@@ -91,7 +94,7 @@ ClientNet: class {
         ready()
     }
 
-    onGameInfo: func (bag: ZBag) {
+    gameInfo: func (bag: ZBag) {
         board := Board pull(bag)
         onBoard(board)
 
@@ -101,11 +104,24 @@ ClientNet: class {
         }
     }
 
+    newUnit: func (bag: ZBag) {
+        numUnits := bag pullInt()
+        for (i in 0..numUnits) {
+            playerName := bag pull()
+            hash := bag pull()
+            onNewUnit(playerName, hash)
+        }
+    }
+
     // override that shiznit
 
     onBoard: func (board: Board)
 
     onNewPlayer: func (name: String)
+
+    onNewUnit: func (playerName, hash: String)
+
+    start: func
 
     // business
 

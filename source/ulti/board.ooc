@@ -46,6 +46,8 @@ Unit: class {
     player: Player
     messages := Stack<String> new()
 
+    hash: String
+
     // state
     action: Action
     tileIndex: Int
@@ -203,15 +205,28 @@ RGB: class {
 Board: class {
 
     tiles := ArrayList<Tile> new()    
+    units := HashMap<String, Unit> new()
+
     streetGroups := HashMap<String, StreetGroup> new()    
     logger := static Log getLogger(This name)
+
+    // for hash generation
+    seed := 0
 
     init: func {
     }
 
     createUnit: func (player: Player) -> Unit {
+        hash := "%s-%d" format(player name, seed)
+        seed += 1
+        addUnit(player, hash)
+    }
+
+    addUnit: func (player: Player, hash: String) -> Unit {
         unit := Unit new(this, player)
+        unit hash = hash
         unit tileIndex = 0
+        units put(hash, unit)
         logger info("Unit spawned on tile %s", getTile(unit tileIndex) toString())
         unit
     }

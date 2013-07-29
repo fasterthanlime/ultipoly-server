@@ -111,6 +111,15 @@ ServerNet: class {
             bag shove(player player name)
         }
         publish(bag)
+
+        bag = ZBag new()
+        bag shove("new unit")
+        bag shoveInt(game board units size) 
+        for (unit in game board units) {
+            bag shove(unit player name)
+            bag shove(unit hash)
+        }
+        publish(bag)
     }
 
 }
