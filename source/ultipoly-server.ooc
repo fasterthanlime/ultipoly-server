@@ -33,7 +33,7 @@ Server: class extends Base {
 
         while (true) {
             for (game in games) {
-                game step(delta * 4)
+                game step(delta)
             }
 
             Time sleepMilli(delta)

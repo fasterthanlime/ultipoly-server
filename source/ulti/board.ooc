@@ -207,9 +207,9 @@ Action: class {
 
     init: func (=type) {
         timeout = match type {
-            case ActionType WAIT => 8000.0
-            case ActionType MOVE => 2000.0
-            case ActionType PRISON => 20000.0
+            case ActionType WAIT => 4000.0
+            case ActionType MOVE => 1500.0
+            case ActionType PRISON => 12000.0
             case => 1000.0
         }
     }
