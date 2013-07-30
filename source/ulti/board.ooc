@@ -13,6 +13,7 @@ import ulti/[zbag, events]
 Player: class {
 
     name: String
+    avatar: String
     units := ArrayList<Unit> new()
 
     balance := 1500.0
@@ -20,7 +21,7 @@ Player: class {
     logger: Logger
     hose := Firehose new()
 
-    init: func (=name) {
+    init: func (=name, =avatar) {
         logger = Log getLogger(toString())
     }
 

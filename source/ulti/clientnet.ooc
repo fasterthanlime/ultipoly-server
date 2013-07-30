@@ -110,7 +110,9 @@ ClientNet: class {
 
         numPlayers := bag pullInt()
         for (i in 0..numPlayers) {
-            onNewPlayer(bag pull())
+            name := bag pull()
+            avatar := bag pull()
+            onNewPlayer(name, avatar)
         }
     }
 
@@ -133,7 +135,7 @@ ClientNet: class {
 
     onBoard: func (board: Board)
 
-    onNewPlayer: func (name: String)
+    onNewPlayer: func (name, avatar: String)
 
     onNewUnit: func (playerName, hash: String)
 

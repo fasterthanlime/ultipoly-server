@@ -20,6 +20,8 @@ ServerGame: class {
 
     logger := static Log getLogger(This name)
 
+    remainingAvatars := ArrayList<String> new()
+
     // params
     MINIMUM_PLAYERS := 1
 
@@ -30,10 +32,14 @@ ServerGame: class {
         board = Board new()
         board classicSetup()
         logger info("Board set up!")
+
+        // setting up avatars
+        remainingAvatars add("alien"). add("astronaut")
     }
 
-    addPlayer: func (name: String) {
-        player := Player new(name)
+    addPlayer: func (name: String) -> Player {
+        avatar := remainingAvatars removeAt(0)
+        player := Player new(name, avatar)
         players put(player name, ServerPlayer new(player))
         player hose subscribe(|bag|
             logger info("Player event: %s", bag first())
@@ -49,6 +55,7 @@ ServerGame: class {
             )
         }
         logger info("Player %s joined", name)
+        player
     }
 
     getPlayer: func (name: String) -> ServerPlayer {

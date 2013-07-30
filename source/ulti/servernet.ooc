@@ -83,8 +83,8 @@ ServerNet: class {
     onJoin: func (bag: ZBag) {
         name := bag pull()
         logger warn("%s is trying to join", name)
-        game addPlayer(name)
-        welcome()
+        player := game addPlayer(name)
+        welcome(player)
     }
 
     onReady: func (bag: ZBag) {
@@ -116,7 +116,7 @@ ServerNet: class {
         publish(bag)
     }
 
-    welcome: func {
+    welcome: func (player: Player) {
         bag := ZBag new()
         bag shove("welcome")
         bag shove("port")
@@ -131,6 +131,7 @@ ServerNet: class {
         bag shoveInt(game players size)
         for (player in game players) {
             bag shove(player player name)
+            bag shove(player player avatar)
         }
         publish(bag)
 
