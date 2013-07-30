@@ -12,6 +12,8 @@ import os/[Time]
 
 ServerGame: class {
 
+    running := true
+
     board: Board
     players := HashMap<String, ServerPlayer> new()
 
@@ -21,6 +23,8 @@ ServerGame: class {
     logger := static Log getLogger(This name)
 
     remainingAvatars := ArrayList<String> new()
+
+    keepalive := 0.0
 
     // params
     MINIMUM_PLAYERS := 1
@@ -73,8 +77,34 @@ ServerGame: class {
                     net broadcastGameInfo()
                 }
             case ServerGameState RUNNING =>
+                handleKeepalive(delta)
                 stepPlayers(delta)
         }
+    }
+
+    handleKeepalive: func (delta: Float) {
+        keepalive -= delta
+        if (keepalive > 0) return
+
+        // check for dead clients
+        for (sPlayer in players) {
+            if (!sPlayer alive) {
+                // kick player - but for now, just quit
+                logger error("Player %s left, bailing out!", sPlayer player name)
+                running = false
+            }
+        }
+
+        // reset everyone
+        for (sPlayer in players) {
+            sPlayer alive = false
+        }
+
+        // ask for ping
+        net keepalive()
+
+        // reset timer
+        keepalive = 3000.0
     }
 
     readyToStart?: func -> Bool {
@@ -148,6 +178,7 @@ ServerGameState: enum {
 ServerPlayer: class {
     player: Player
     state := PlayerState JOINING
+    alive := true
 
     init: func (=player) {
     }

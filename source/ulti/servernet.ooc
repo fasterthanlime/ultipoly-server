@@ -59,6 +59,8 @@ ServerNet: class {
                     onReady(bag)
                 case "buy" =>
                     onBuy(bag)
+                case "keepalive" =>
+                    onKeepalive(bag)
                 case =>
                     logger warn("unknown message!")
                     reply(ZBag make("error", "unknown message: %s" format(message)))
@@ -102,7 +104,18 @@ ServerNet: class {
         reply(game tryBuy(name, index))
     }
 
+    onKeepalive: func (bag: ZBag) {
+        name := bag pull()
+        player := game players get(name)
+        player alive = true
+        reply(ZBag make("ack"))
+    }
+
     // business
+
+    keepalive: func {
+        publish(ZBag make("are you alive?"))
+    }
 
     unitEvent: func (unit: Unit, bag: ZBag) {
         bag preshove(unit hash)

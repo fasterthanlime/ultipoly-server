@@ -220,10 +220,13 @@ Action: class {
 
     step: func (delta: Float) {
         timeout -= delta
+        if (timeout < 0) {
+            timeout = 0
+        }
     }
 
     due?: func -> Bool {
-        timeout < 0
+        timeout <= 0
     }
 
     toString: func -> String {

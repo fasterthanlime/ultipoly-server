@@ -29,15 +29,36 @@ Server: class extends Base {
     }
 
     run: func {
-        delta := 20
+        delta := 1000.0 / 60.0 // 60FPS simulation
 
         while (true) {
-            for (game in games) {
+            t1 := Time runTime()
+
+            iter := games iterator()
+            while (iter hasNext?()) {
+                game := iter next()
                 game step(delta)
+                if (!game running) {
+                    games remove(game)
+                }
             }
 
-            Time sleepMilli(delta)
+            t2 := Time runTime()
+            diff := (t2 - t1) as Float
+            if (diff < delta) {
+                sleep := (delta - diff) as UInt
+                Time sleepMilli(sleep)
+            }
+
+            if (games empty?()) {
+                // bail out! for now!
+                quit()
+            }
         }
+    }
+
+    quit: func {
+        exit(0)
     }
 
 }

@@ -16,8 +16,6 @@ import structs/[List, ArrayList]
 
 ClientNet: class {
 
-    player: Player
-
     context: Context
     req: Socket
     sub: Socket
@@ -92,6 +90,8 @@ ClientNet: class {
                     name := bag pull()
                     tileIndex := bag pullInt()
                     tileBought(name, tileIndex)
+                case "are you alive?" =>
+                    keepalive()
                 case =>
                     logger warn("Unknown message :'(")
             }
@@ -125,13 +125,13 @@ ClientNet: class {
         }
     }
 
+    // override that shiznit
+
     unitEvent: func (bag: ZBag)
 
     playerEvent: func (bag: ZBag)
 
     tileBought: func (name: String, tileIndex: Int)
-
-    // override that shiznit
 
     onBoard: func (board: Board)
 
@@ -140,6 +140,8 @@ ClientNet: class {
     onNewUnit: func (playerName, hash: String)
 
     start: func
+
+    keepalive: func
 
     // business
 
