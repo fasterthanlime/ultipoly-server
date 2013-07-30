@@ -108,6 +108,7 @@ Unit: class {
          action ? action toString() : "(nil)", newAction toString(), newAction timeout)
 
         action = newAction
+        hose publish(ZBag make("action", action type as Int, action timeout, action number))
     }
 
     _apply: func (action: Action) {
@@ -146,6 +147,12 @@ Unit: class {
             case "move" =>
                 tileIndex = bag pullInt()
                 logger info("Unit %s moved to %d", hash, tileIndex)
+            case "action" =>
+                type := bag pullInt() as ActionType
+                action = Action new(type)
+                action timeout = bag pullFloat()
+                action number = bag pullInt()
+                logger info("Unit %s changed action to %s", hash, action toString())
             case =>
                 logger warn("Unknown unit event message: %s", message)
         }
@@ -192,18 +199,17 @@ Dice: class {
 }
 
 Action: class {
+    type: ActionType
     timeout: Float
 
     // an int you can store anything in
     number := 0
 
-    type: ActionType
-
     init: func (=type) {
         timeout = match type {
-            case ActionType WAIT => 2000.0
-            case ActionType MOVE => 4000.0
-            case ActionType PRISON => 5000.0
+            case ActionType WAIT => 8000.0
+            case ActionType MOVE => 2000.0
+            case ActionType PRISON => 20000.0
             case => 1000.0
         }
     }
@@ -217,7 +223,7 @@ Action: class {
     }
 
     toString: func -> String {
-        type toString()
+        "%s(%.0f, number: %d)" format(type toString(), timeout, number)
     }
 }
 
@@ -465,7 +471,11 @@ Tile: abstract class {
     }
 
     buyable?: func -> Bool {
-        false
+        getPrice() >= 0.0
+    }
+
+    getPrice: func -> Float {
+        return -1.0
     }
 
 }
@@ -599,9 +609,8 @@ Street: class extends Tile {
         format(group name, baseRent, price, housePrice, mortgage)
     }
 
-    buyable?: func -> Bool {
-        true
+    getPrice: func -> Float {
+        return price
     }
-
 }
 

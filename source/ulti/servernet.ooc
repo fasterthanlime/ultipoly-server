@@ -99,7 +99,7 @@ ServerNet: class {
         index := bag pullInt()
         logger warn("%s is trying to buy tile #%d", name, index)
 
-        game tryBuy(name, index)
+        reply(game tryBuy(name, index))
     }
 
     // business

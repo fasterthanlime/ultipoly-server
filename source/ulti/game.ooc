@@ -101,37 +101,41 @@ ServerGame: class {
 
     // stuff
 
-    tryBuy: func (name: String, tileIndex: Int) {
+    tryBuy: func (name: String, tileIndex: Int) -> ZBag {
         tile := board getTile(tileIndex)
         if (tile owner) {
-            net reply(ZBag make("denied", "buy denied - tile is already owned"))
-            return
+            return ZBag make("denied", "buy denied - tile is already owned")
         }
 
-        player := players get(name)
-        if (!player) {
-            net reply(ZBag make("denied", "unknown player %s" format(name)))
-            return
+        sPlayer := players get(name)
+        if (!sPlayer) {
+            return ZBag make("denied", "unknown player %s" format(name))
         }
+        player := sPlayer player
 
         onThere := false
-        for (unit in player player units) {
+        for (unit in player units) {
             if (unit tileIndex == tileIndex && unit waiting?()) {
                 onThere = true
             }
         }
         if (!onThere) {
-            net reply(ZBag make("denied", "no waiting unit there"))
-            return
+            return ZBag make("denied", "no waiting unit there")
         }
 
         if (!tile buyable?()) {
-            net reply(ZBag make("denied", "unbuyable tile"))
-            return
+            return ZBag make("denied", "unbuyable tile")
+        }
+
+        if (player balance < tile getPrice()) {
+            return ZBag make("denied", "can't afford it!")
         }
 
         tile owner = player
+        player spend(tile getPrice())
         net publish(ZBag make("tile bought", name, tileIndex))
+
+        ZBag make("ack")
     }
 
 }
