@@ -59,6 +59,8 @@ ClientNet: class {
                     onWelcome(bag)
                 case "ack" =>
                     // all good!
+                case "denied" =>
+                    logger warn("Denied: %s", bag pull())
                 case =>
                     logger warn("Unknown message :'(")
             }
@@ -86,6 +88,10 @@ ClientNet: class {
                     unitEvent(bag)
                 case "player event" =>
                     playerEvent(bag)
+                case "tile bought" =>
+                    name := bag pull()
+                    tileIndex := bag pullInt()
+                    tileBought(name, tileIndex)
                 case =>
                     logger warn("Unknown message :'(")
             }
@@ -121,6 +127,8 @@ ClientNet: class {
 
     playerEvent: func (bag: ZBag)
 
+    tileBought: func (name: String, tileIndex: Int)
+
     // override that shiznit
 
     onBoard: func (board: Board)
@@ -139,6 +147,10 @@ ClientNet: class {
 
     ready: func {
         send(ZBag make("ready", name))
+    }
+
+    tryBuy: func (tileIndex: Int) {
+        send(ZBag make("buy", name, tileIndex))
     }
 
     // utility

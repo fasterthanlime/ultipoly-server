@@ -4,7 +4,7 @@ use deadlogger
 import deadlogger/[Log, Logger]
 
 // ours
-import ulti/[base, board, servernet]
+import ulti/[base, board, servernet, zbag]
 
 // sdk
 import structs/[ArrayList, HashMap]
@@ -90,6 +90,41 @@ ServerGame: class {
                 unit step(delta)
             }
         }
+    }
+
+    // stuff
+
+    tryBuy: func (name: String, tileIndex: Int) {
+        tile := board getTile(tileIndex)
+        if (tile owner) {
+            net reply(ZBag make("denied", "buy denied - tile is already owned"))
+            return
+        }
+
+        player := players get(name)
+        if (!player) {
+            net reply(ZBag make("denied", "unknown player %s" format(name)))
+            return
+        }
+
+        onThere := false
+        for (unit in player player units) {
+            if (unit tileIndex == tileIndex && unit waiting?()) {
+                onThere = true
+            }
+        }
+        if (!onThere) {
+            net reply(ZBag make("denied", "no waiting unit there"))
+            return
+        }
+
+        if (!tile buyable?()) {
+            net reply(ZBag make("denied", "unbuyable tile"))
+            return
+        }
+
+        tile owner = player
+        net publish(ZBag make("tile bought", name, tileIndex))
     }
 
 }

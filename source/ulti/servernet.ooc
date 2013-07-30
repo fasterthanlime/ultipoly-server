@@ -57,6 +57,8 @@ ServerNet: class {
                     onJoin(bag)
                 case "ready" =>
                     onReady(bag)
+                case "buy" =>
+                    onBuy(bag)
                 case =>
                     logger warn("unknown message!")
                     reply(ZBag make("error", "unknown message: %s" format(message)))
@@ -90,6 +92,14 @@ ServerNet: class {
         logger warn("%s is ready", name)
         game getPlayer(name) ready()
         reply(ZBag make("ack"))
+    }
+
+    onBuy: func (bag: ZBag) {
+        name := bag pull()
+        index := bag pullInt()
+        logger warn("%s is trying to buy tile #%d", name, index)
+
+        game tryBuy(name, index)
     }
 
     // business

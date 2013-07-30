@@ -172,6 +172,10 @@ Unit: class {
             }
         }
     }
+
+    waiting?: func -> Bool {
+        (action != null && action type == ActionType WAIT)
+    }
 }
 
 Dice: class {
@@ -459,6 +463,10 @@ Tile: abstract class {
         tile
     }
 
+    buyable?: func -> Bool {
+        false
+    }
+
 }
 
 SpecialTile: class extends Tile {
@@ -588,6 +596,10 @@ Street: class extends Tile {
     toString: func -> String {
         "%s street, base = %.0f, price = %.0f, house = %.0f, mort %.0f" \
         format(group name, baseRent, price, housePrice, mortgage)
+    }
+
+    buyable?: func -> Bool {
+        true
     }
 
 }
