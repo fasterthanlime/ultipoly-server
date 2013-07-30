@@ -143,14 +143,14 @@ ServerGame: class {
         }
         player := sPlayer player
 
-        onThere := false
-        for (unit in player units) {
-            if (unit tileIndex == tileIndex && unit waiting?()) {
-                onThere = true
+        unit: Unit
+        for (u in player units) {
+            if (u tileIndex == tileIndex && u waiting?()) {
+                unit = u
             }
         }
-        if (!onThere) {
-            return ZBag make("denied", "no waiting unit there")
+        if (unit == null) {
+            return ZBag make("denied", "not there anymore!")
         }
 
         if (!tile buyable?()) {
@@ -161,11 +161,17 @@ ServerGame: class {
             return ZBag make("denied", "can't afford it!")
         }
 
+        unit begin(Action new(ActionType BUY))
+        ZBag make("ack")
+    }
+
+    doBuy: func (unit: Unit) -> ZBag {
+        tile := board getTile(unit tileIndex)
+        player := unit player
+
         tile owner = player
         player spend(tile getPrice())
-        net publish(ZBag make("tile bought", name, tileIndex))
-
-        ZBag make("ack")
+        net publish(ZBag make("tile bought", player name, unit tileIndex))
     }
 
 }

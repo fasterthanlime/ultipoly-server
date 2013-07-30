@@ -119,6 +119,8 @@ Unit: class {
                     player gain(200)
                 }
                 moveTo(action number)
+            case ActionType BUY =>
+                hose publish(ZBag make("buy"))
         }
     }
 
@@ -169,6 +171,10 @@ Unit: class {
             match (action type) {
                 case ActionType MOVE =>
                     begin(Action new(ActionType WAIT))
+                case ActionType BUY =>
+                    begin(Action new(ActionType WAIT))
+                case ActionType BUILD =>
+                    begin(Action new(ActionType WAIT))
                 case =>
                     move := Action new(ActionType MOVE)
                     roll := Dice roll()
@@ -211,6 +217,8 @@ Action: class {
 
     init: func (=type) {
         timeout = match type {
+            case ActionType BUY => 6000.0
+            case ActionType BUILD => 3000.0
             case ActionType WAIT => 4000.0
             case ActionType MOVE => 1500.0
             case ActionType PRISON => 12000.0
@@ -235,12 +243,16 @@ Action: class {
 }
 
 ActionType: enum {
+    BUY    // buying land
+    BUILD  // constructing stuff...
     WAIT   // just waiting for orders
     MOVE   // going somewhere
     PRISON // the jailhouse won
 
     toString: func -> String {
         match this {
+            case This BUY    => "buy"
+            case This BUILD  => "buy"
             case This WAIT   => "wait"
             case This MOVE   => "move"
             case This PRISON => "prison"

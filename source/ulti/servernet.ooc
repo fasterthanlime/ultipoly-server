@@ -118,9 +118,19 @@ ServerNet: class {
     }
 
     unitEvent: func (unit: Unit, bag: ZBag) {
-        bag preshove(unit hash)
-        bag preshove("unit event")
-        publish(bag)
+        message := bag first()
+        logger info("unit event: %s", message)
+
+        match (message) {
+            case "buy" =>
+                // buy that shiznit!
+                logger info("dobuy! %s, %d", unit hash, unit tileIndex)
+                game doBuy(unit)
+            case =>
+                bag preshove(unit hash)
+                bag preshove("unit event")
+                publish(bag)
+        }
     }
 
     playerEvent: func (player: Player, bag: ZBag) {
