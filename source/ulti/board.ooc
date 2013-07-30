@@ -163,9 +163,7 @@ Unit: class {
     }
 
     step: func (delta: Float) {
-        if (action) {
-            action step(delta)
-        }
+        fakeStep(delta)
 
         if (action due?()) {
             match (action type) {
@@ -178,6 +176,12 @@ Unit: class {
                     logger info("rolled a %d", roll)
                     begin(move)
             }
+        }
+    }
+
+    fakeStep: func (delta: Float) {
+        if (action) {
+            action step(delta)
         }
     }
 
