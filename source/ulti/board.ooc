@@ -138,6 +138,11 @@ Unit: class {
                 player spend(75)
             case TileType POLICE =>
                 queue("go-to-prison")
+            case TileType STREET =>
+                street := tile as Street
+                if (street owner != null && player != street owner) {
+                    player spend(street rent())
+                }
         }
 
         hose publish(ZBag make("move", tileIndex))
@@ -243,20 +248,26 @@ Action: class {
 }
 
 ActionType: enum {
-    BUY    // buying land
-    BUILD  // constructing stuff...
-    WAIT   // just waiting for orders
-    MOVE   // going somewhere
-    PRISON // the jailhouse won
+    BUY     // buying land
+    BUILD   // constructing stuff...
+    WAIT    // just waiting for orders
+    MOVE    // going somewhere
+    PRISON  // the jailhouse won
+    AUCTION // one time, two times, won!
 
     toString: func -> String {
         match this {
             case This BUY    => "buy"
-            case This BUILD  => "buy"
+            case This BUILD  => "build"
             case This WAIT   => "wait"
             case This MOVE   => "move"
             case This PRISON => "prison"
+            case This PRISON => "auction"
         }
+    }
+
+    toInt: func -> Int {
+        this as Int - 1
     }
 }
 
