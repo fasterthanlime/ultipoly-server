@@ -27,7 +27,7 @@ ServerGame: class {
     keepalive := 0.0
 
     // params
-    MINIMUM_PLAYERS := 1
+    MINIMUM_PLAYERS := 2
 
     init: func {
         net = ServerNet new(this, "tcp://0.0.0.0:5555")
