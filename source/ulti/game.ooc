@@ -4,7 +4,7 @@ use deadlogger
 import deadlogger/[Log, Logger]
 
 // ours
-import ulti/[base, board, servernet, zbag]
+import ulti/[base, board, servernet, zbag, options]
 
 // sdk
 import structs/[ArrayList, HashMap]
@@ -26,10 +26,9 @@ ServerGame: class {
 
     keepalive := 0.0
 
-    // params
-    MINIMUM_PLAYERS := 1
+    options: ServerOptions
 
-    init: func {
+    init: func (=options) {
         net = ServerNet new(this, "tcp://0.0.0.0:5555")
         logger info("Socket open.")
 
@@ -108,7 +107,7 @@ ServerGame: class {
     }
 
     readyToStart?: func -> Bool {
-        if (players size < MINIMUM_PLAYERS) {
+        if (players size < options minPlayers) {
             return false
         }
 

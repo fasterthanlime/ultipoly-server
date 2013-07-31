@@ -3,8 +3,11 @@
 use deadlogger
 import deadlogger/[Log, Logger]
 
+use zombieconfig
+import zombieconfig
+
 // ours
-import ulti/[base, servernet, game]
+import ulti/[base, servernet, game, options]
 
 // sdk
 import structs/[ArrayList]
@@ -16,16 +19,29 @@ main: func (args: ArrayList<String>) {
 
 Server: class extends Base {
 
+    options: ServerOptions
     games := ArrayList<ServerGame> new()
 
     init: func {
         super()
         logger info("Starting up ultipoly-server...")
 
-        game := ServerGame new()
-        games add(game)
+        logger info("Loading config")
+        configPath := "config/server.config"
+        config := ZombieConfig new(configPath, |base|
+            base("minPlayers", "2")
+            base("loop", "false")
+        )
+
+        options = ServerOptions new(config)
+        createGame()
 
         run()
+    }
+
+    createGame: func {
+        game := ServerGame new(options)
+        games add(game)
     }
 
     run: func {
@@ -51,8 +67,13 @@ Server: class extends Base {
             }
 
             if (games empty?()) {
-                // bail out! for now!
-                quit()
+                if (options loop) {
+                    logger info("Creating another game")
+                    createGame()
+                } else {
+                    logger info("Server shutting down...")
+                    quit()
+                }
             }
         }
     }
@@ -62,5 +83,4 @@ Server: class extends Base {
     }
 
 }
-
 
