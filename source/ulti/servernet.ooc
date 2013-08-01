@@ -11,7 +11,6 @@ use ultipoly-server
 import ulti/[board, game, zbag]
 
 // sdk
-import text/StringTokenizer
 import structs/[List, ArrayList]
 
 ServerNet: class {
@@ -19,19 +18,15 @@ ServerNet: class {
     game: ServerGame
 
     context: Context
-    rep: Socket
-    pub: Socket
-    pubPort: Int
+    rep, pub: Socket
+    repPort, pubPort: Int
 
     logger := static Log getLogger(This name)
 
-    init: func (=game, address: String) {
-        // create zmq context
-        context = Context new()
-
+    init: func (=context, =game) {
         rep = context createSocket(ZMQ REP)
-        rep bind(address)
-        logger warn("Reply socket bound on %s", address)
+        repPort = rep bind("tcp://0.0.0.0:*")
+        logger warn("Reply socket bound on port %d", repPort)
 
         pub = context createSocket(ZMQ PUB)
         pubPort = pub bind("tcp://0.0.0.0:*")

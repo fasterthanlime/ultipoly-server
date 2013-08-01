@@ -4,13 +4,16 @@ use deadlogger
 import deadlogger/[Log, Logger]
 
 // ours
-import ulti/[base, board, servernet, zbag, options]
+import ulti/[base, board, servernet, zbag, options, lobby, server]
 
 // sdk
 import structs/[ArrayList, HashMap]
 import os/[Time]
 
 ServerGame: class {
+
+    server: Server
+    name: String
 
     running := true
 
@@ -20,17 +23,16 @@ ServerGame: class {
     state := ServerGameState ACCEPTING_PLAYERS
     net: ServerNet
 
-    logger := static Log getLogger(This name)
+    logger: Logger
 
     remainingAvatars := ArrayList<String> new()
 
     keepalive := 0.0
 
-    options: ServerOptions
+    init: func (=server, =name) {
+        logger = Log getLogger("%s %s" format(This name, name))
 
-    init: func (=options) {
-        net = ServerNet new(this, "tcp://0.0.0.0:5555")
-        logger info("Socket open.")
+        net = ServerNet new(server lobby context, this)
 
         board = Board new()
         board classicSetup()
@@ -107,7 +109,7 @@ ServerGame: class {
     }
 
     readyToStart?: func -> Bool {
-        if (players size < options minPlayers) {
+        if (players size < server options minPlayers) {
             return false
         }
 

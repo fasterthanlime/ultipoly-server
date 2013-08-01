@@ -17,29 +17,55 @@ import structs/[List, ArrayList]
 ClientNet: class {
 
     context: Context
-    req: Socket
-    sub: Socket
+    leq, req, sub: Socket
 
     hostname: String
-    reqPort, subPort: Int
+    leqPort, reqPort, subPort: Int
 
     name: String
 
     logger := static Log getLogger(This name)
 
-    init: func {
+    init: func (=hostname, =leqPort) {
         // create zmq context
         context = Context new()
-        req = context createSocket(ZMQ REQ)
 
+        // leq = lobby req
+        leq = context createSocket(ZMQ REQ)
+        address := "tcp://%s:%d" format(hostname, leqPort)
+        leq connect("")
+
+        req = context createSocket(ZMQ REQ)
         sub = context createSocket(ZMQ SUB)
     }
 
     // loop
 
     update: func {
+        pumpLeq()
         pumpReq()
         pumpSub()
+    }
+
+    pumpLeq: func {
+        while (req poll(10)) {
+            str := req recvStringNoWait()
+            if (str == null) return
+
+            bag := ZBag extract(str)
+    
+            message := bag pull()
+            logger warn("<< %s", message)
+
+            match message {
+                case "welcome" =>
+                    onLobbyWelcome(bag)
+                case "nah" =>
+                    logger warn("Nah: %s", bag pull())
+                case =>
+                    logger warn("Unknown message :'(")
+            }
+        }
     }
 
     pumpReq: func {
@@ -145,6 +171,11 @@ ClientNet: class {
 
     // business
 
+    onLobbyWelcome: func (bag: ZBag) {
+        reqPort := bag pullInt()
+        connect(reqPort)
+    }
+
     join: func (=name) {
         send(ZBag make("join", name))
     }
@@ -159,7 +190,7 @@ ClientNet: class {
 
     // utility
 
-    connect: func (=hostname, =reqPort) {
+    connect: func (=reqPort) {
         address := "tcp://%s:%d" format(hostname, reqPort)
         logger warn("Connecting req/rep to: %s", address)
         req connect(address)
