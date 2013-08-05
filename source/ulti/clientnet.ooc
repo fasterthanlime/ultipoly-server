@@ -33,7 +33,8 @@ ClientNet: class {
         // leq = lobby req
         leq = context createSocket(ZMQ REQ)
         address := "tcp://%s:%d" format(hostname, leqPort)
-        leq connect("")
+        logger info("Connecting to lobby at %s", address)
+        leq connect(address)
 
         req = context createSocket(ZMQ REQ)
         sub = context createSocket(ZMQ SUB)
@@ -48,14 +49,14 @@ ClientNet: class {
     }
 
     pumpLeq: func {
-        while (req poll(10)) {
-            str := req recvStringNoWait()
+        while (leq poll(10)) {
+            str := leq recvStringNoWait()
             if (str == null) return
 
             bag := ZBag extract(str)
     
             message := bag pull()
-            logger warn("<< %s", message)
+            logger warn("|<< %s", message)
 
             match message {
                 case "welcome" =>
@@ -124,11 +125,23 @@ ClientNet: class {
         }
     }
 
+    // lobby stuff
+
+    createGame: func {
+        lobbySend(ZBag make("create"))
+    }
+
+    joinGame: func (name: String) {
+        lobbySend(ZBag make("join", name))
+    }
+
     onWelcome: func (bag: ZBag) {
         bag pullCheck("port")
         connectSub(bag pullInt())
         ready()
     }
+
+    // non-lobby stuff
 
     gameInfo: func (bag: ZBag) {
         board := Board pull(bag)
@@ -203,6 +216,11 @@ ClientNet: class {
 
         // subscribe to ALLLL the messages.
         sub subscribe("")
+    }
+
+    lobbySend: func (bag: ZBag) {
+        logger warn("|>> %s", bag first())
+        leq sendString(bag pack())
     }
 
     send: func (bag: ZBag) {

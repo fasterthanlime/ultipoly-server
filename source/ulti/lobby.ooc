@@ -20,6 +20,8 @@ Lobby: class {
     context: Context
     rep: Socket
 
+    seed := 0
+
     logger := static Log getLogger(This name)
 
     init: func (=server) {
@@ -63,10 +65,16 @@ Lobby: class {
 
     // business
 
+    generateName: func -> String {
+        name := "game%d" format(seed)
+        seed += 1
+        name
+    }
+
     onCreateGame: func (bag: ZBag) -> ZBag {
-        name := bag pull()
+        name := generateName()
         if (server games contains?(name)) {
-            return ZBag make("nah", "name already taken")
+            return ZBag make("nah", "name generation failed")
         }
         
         game := ServerGame new(server, name)
