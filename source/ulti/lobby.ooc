@@ -79,7 +79,7 @@ Lobby: class {
         
         game := ServerGame new(server, name)
         server games put(name, game)
-        ZBag make("welcome", game net repPort)
+        ZBag make("welcome", game name, game net repPort)
     }
 
     onJoinGame: func (bag: ZBag) -> ZBag {
@@ -88,7 +88,7 @@ Lobby: class {
             return ZBag make("nah", "game does not exist")
         }
         game := server games get(name)
-        ZBag make("welcome", game net repPort)
+        ZBag make("welcome", game name, game net repPort)
     }
 
 

@@ -182,11 +182,15 @@ ClientNet: class {
 
     keepalive: func
 
+    onConnected: func (name: String)
+
     // business
 
     onLobbyWelcome: func (bag: ZBag) {
+        name := bag pull()
         reqPort := bag pullInt()
         connect(reqPort)
+        onConnected(name)
     }
 
     join: func (=name) {
